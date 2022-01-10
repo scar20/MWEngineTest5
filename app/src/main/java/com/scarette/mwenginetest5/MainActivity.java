@@ -49,24 +49,16 @@ public class MainActivity extends AppCompatActivity {
     private MWEngine _engine;
     private SequencerController _sequencerController;
 
-
     private Vector<SampleEvent> _samplesVector = new Vector<>();
-    private SampleEvent sampleEvent;
+
     private ReverbSM reverb;
-    private SwitchCompat reverbSwitch;
     private Metronome metronome;
     private ChannelGroup track1;
 
-    private Button playButton;
-    private Button oneShotButton;
-    private Button stopAllButton;
     private int maxSampleCount = 32;
     private int slength;
     private int smillis;
 
-
-    private boolean isPlaying = false;
-    private boolean _isRecording      = false;
     private boolean _inited           = false;
 
     // AAudio is only supported from Android 8/Oreo onwards.
@@ -77,8 +69,6 @@ public class MainActivity extends AppCompatActivity {
     private int BUFFER_SIZE;
     private int OUTPUT_CHANNELS = 2; // 1 = mono, 2 = stereo
 
-
-    private static int STEPS_PER_MEASURE = 16;  // amount of subdivisions within a single measure
     private static String LOG_TAG = "MWENGINE"; // logcat identifier
     private static int PERMISSIONS_CODE = 8081981;
 
@@ -161,10 +151,8 @@ public class MainActivity extends AppCompatActivity {
 
         // STEP 1 : preparing the native audio engine
 
-        // use this one for above V2.0 to latest
         _engine = new MWEngine( new StateObserver() );
-        // use this one for V2.0 and below
-//        _engine = new MWEngine( this, new StateObserver() );
+
 
         MWEngine.optimizePerformance( this );
 
@@ -194,9 +182,6 @@ public class MainActivity extends AppCompatActivity {
 
         ((Spinner) findViewById( R.id.SampleSpinner)).setOnItemSelectedListener( new SampleChangeHandler() );
 
-        playButton = findViewById( R.id.PlayPauseButton);
-        playButton.setOnTouchListener( new PlayClickHandler() );
-
         ((SwitchCompat) findViewById(R.id.ReverbSwitch)).setOnClickListener(new ReverbSwitchHandler());
 
         ((SwitchCompat) findViewById(R.id.MetronomeSwitch)).setOnClickListener(new MetronomeSwitchHandler());
@@ -215,18 +200,10 @@ public class MainActivity extends AppCompatActivity {
     /* protected methods */
 
     protected void setupSong() {
-//        _sequencerController = _engine.getSequencerController();
-//        _sequencerController.setTempoNow( 130.0f, 4, 4 ); // 130 BPM in 4/4 time
-//        _sequencerController.updateMeasures( 1, STEPS_PER_MEASURE ); // we'll loop just a single measure with given subdivisions
 
         // cache some of the engines properties
 
         final ProcessingChain masterBus = _engine.getMasterBusProcessors();
-
-        // Load some samples from the packaged assets folder into the SampleManager
-
-        loadWAVAsset( "bach2_48.wav", "one" );
-//        loadWAVAsset( "bonjour-hello48_16bit.wav", "bonjour" );
 
         // create a lowpass filter to catch all low rumbling and a limiter to prevent clipping of output :)
 
@@ -239,13 +216,6 @@ public class MainActivity extends AppCompatActivity {
         // STEP 2 : let's create some instruments =D
 
         _sampler = new SampledInstrument();
-        sampleEvent = new SampleEvent(_sampler);
-
-        sampleEvent.setSample(SampleManager.getSample("one"));
-
-        sampleEvent.setLoopeable(true, 0);
-        reverb = new ReverbSM();
-//        _sampler.getAudioChannel().getProcessingChain().addProcessor(reverb);
 
         for (int i = 0; i < maxSampleCount; i++) {
             final SampleEvent ev = new SampleEvent(_sampler);
@@ -254,10 +224,12 @@ public class MainActivity extends AppCompatActivity {
         Log.d( LOG_TAG, "setupSong() _sampleVector.size: " + _samplesVector.size());
         Log.d( LOG_TAG, "setupSong() _sampleVector.get(0): " + _samplesVector.get(0));
 
-        Log.d( LOG_TAG, "setupSong() creating new metronome");
+//        Log.d( LOG_TAG, "setupSong() creating new metronome");
         metronome = new Metronome();
-        Log.d( LOG_TAG, "setupSong() new metronome created");
+//        Log.d( LOG_TAG, "setupSong() new metronome created");
         _sampler.getAudioChannel().getProcessingChain().addProcessor(_limiter);
+
+        reverb = new ReverbSM();
 
         track1 = new ChannelGroup();
         track1.addAudioChannel(_sampler.getAudioChannel());
@@ -275,7 +247,10 @@ public class MainActivity extends AppCompatActivity {
         // calling 'delete()' on a BaseAudioEvent invokes the
         // native layer destructor (and removes it from the sequencer)
 
-        sampleEvent.delete();
+        for (final BaseAudioEvent event : _samplesVector) {
+            event.getInstrument().delete();
+            event.delete();
+        }
 
         // detach all processors from engine's master bus
 
@@ -285,10 +260,13 @@ public class MainActivity extends AppCompatActivity {
         // (and frees memory allocated to their resources, e.g. AudioChannels, Processors)
 
         _sampler.delete();
+        _samplesVector.clear();
+
 
         // allow these to be garbage collected
 
         _sampler = null;
+        _samplesVector = null;
 
         // and these (garbage collection invokes native layer destructors, so we'll let
         // these processors be cleared lazily)
@@ -345,29 +323,12 @@ public class MainActivity extends AppCompatActivity {
             slength = SampleManager.getSampleLength("one");
             smillis = BufferUtility.bufferToMilliseconds(slength, SAMPLE_RATE);
             metronome.calcOverlap();
-            sampleEvent.stop();
-            isPlaying = false;
-            playButton.setText(R.string.play_btn);
-            sampleEvent.setSample(SampleManager.getSample(name));
             for (SampleEvent ev : _samplesVector)
                 ev.setSample(SampleManager.getSample(name));
 
         }
         @Override
         public void onNothingSelected(AdapterView<?> arg0) {}
-    }
-
-    private class PlayClickHandler implements View.OnTouchListener {
-        @Override
-        public boolean onTouch(View view, MotionEvent motionEvent) {
-            if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-                isPlaying = !isPlaying;
-                if (isPlaying) sampleEvent.play();
-                else sampleEvent.stop();
-                ((Button) view ).setText( isPlaying ? R.string.pause_btn : R.string.play_btn );
-            }
-            return false;
-        }
     }
 
     private class ReverbSwitchHandler implements View.OnClickListener {
@@ -536,11 +497,11 @@ public class MainActivity extends AppCompatActivity {
                     // we can calculate the amount of samples pending until the next step position is reached
                     // which in turn allows us to calculate the engine latency
 
-                    int sequencerPosition = _sequencerController.getStepPosition();
-                    int elapsedSamples    = _sequencerController.getBufferPosition();
-
-                    Log.d( LOG_TAG, "seq. position: " + sequencerPosition + ", buffer offset: " + aNotificationValue +
-                            ", elapsed samples: " + elapsedSamples );
+//                    int sequencerPosition = _sequencerController.getStepPosition();
+//                    int elapsedSamples    = _sequencerController.getBufferPosition();
+//
+//                    Log.d( LOG_TAG, "seq. position: " + sequencerPosition + ", buffer offset: " + aNotificationValue +
+//                            ", elapsed samples: " + elapsedSamples );
                     break;
                 case RECORDED_SNIPPET_READY:
                     runOnUiThread( new Runnable() {
