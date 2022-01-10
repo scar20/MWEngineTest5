@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.appcompat.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".MainActivity">
+
+    <LinearLayout android:orientation="vertical"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent">
+
+        <!-- intro text -->
+
+        <TextView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:padding="15dip"
+            android:text="@string/app_help"
+            android:layout_marginBottom="5dip"
+            />
+
+        <!-- sample  selection -->
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start"
+            android:orientation="horizontal"
+            >
+
+            <Spinner
+                android:id="@+id/SampleSpinner"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:background="@android:drawable/btn_dropdown"
+                android:spinnerMode="dropdown"
+                android:entries="@array/drivers"
+                />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/sample"
+                android:paddingRight="15dip"
+                />
+
+        </LinearLayout>
+
+        <!-- play/pause buttons -->
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
+            android:layout_marginTop="16dp"
+            android:layout_gravity="start"
+            android:orientation="horizontal"
+            >
+            <Button
+                android:id="@+id/PlayPauseButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:text="@string/play_btn" />
+
+        </LinearLayout>
+
+        <!-- reverb switch -->
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.SwitchCompat android:id="@+id/ReverbSwitch"
+                android:checked="false"
+                android:layout_marginLeft="5dip"
+                android:layout_marginRight="5dip"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:padding="7dip"
+                android:text="@string/reverb_switch" />
+        </LinearLayout>
+
+        <!-- metronome switch -->
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.SwitchCompat android:id="@+id/MetronomeSwitch"
+                android:checked="false"
+                android:layout_marginLeft="5dip"
+                android:layout_marginRight="5dip"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:padding="7dip"
+                android:text="@string/metro_switch" />
+        </LinearLayout>
+
+        <!-- metronome speed -->
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <SeekBar
+                android:id="@+id/MetronomeSpeedSlider"
+                android:layout_width="200dip"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dip"
+                android:layout_marginTop="16dp"
+                android:layout_marginRight="5dip"
+                android:layout_marginBottom="16dp"
+                android:progress="20" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:padding="7dip"
+                android:text="@string/metronome_speed" />
+        </LinearLayout>
+
+        <!-- output volume -->
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <SeekBar
+                android:id="@+id/VolumeSlider"
+                android:layout_width="200dip"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dip"
+                android:layout_marginTop="16dp"
+                android:layout_marginRight="5dip"
+                android:layout_marginBottom="16dp"
+                android:progress="70" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:padding="7dip"
+                android:text="@string/slider_volume" />
+        </LinearLayout>
+
+        <!-- oneshot button -->
+
+        <Button
+            android:id="@+id/oneshot_button"
+            android:layout_width="match_parent"
+            android:layout_height="128dp"
+            android:layout_marginTop="32dp"
+            android:text="OneShot Trigger" />
+
+        <Button
+            android:id="@+id/oneshotstop_button"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:layout_marginTop="32dp"
+            android:text="OneShot Stop All" />
+
+    </LinearLayout>
+
+</androidx.appcompat.widget.LinearLayoutCompat>
