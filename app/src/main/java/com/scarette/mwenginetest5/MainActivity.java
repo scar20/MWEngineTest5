@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
     private Metronome metronome;
     private ChannelGroup track1;
 
-    private int maxSampleCount = 32;
+    private int maxSampleCount = 48;
     private int slength;
     private int smillis;
 
@@ -224,17 +224,15 @@ public class MainActivity extends AppCompatActivity {
         Log.d( LOG_TAG, "setupSong() _sampleVector.size: " + _samplesVector.size());
         Log.d( LOG_TAG, "setupSong() _sampleVector.get(0): " + _samplesVector.get(0));
 
-//        Log.d( LOG_TAG, "setupSong() creating new metronome");
+        _sampler.getAudioChannel().getProcessingChain().addProcessor(_limiter); // "borrowed" from masterBus
+
         metronome = new Metronome();
-//        Log.d( LOG_TAG, "setupSong() new metronome created");
-        _sampler.getAudioChannel().getProcessingChain().addProcessor(_limiter);
 
         reverb = new ReverbSM();
 
         track1 = new ChannelGroup();
         track1.addAudioChannel(_sampler.getAudioChannel());
         _engine.addChannelGroup(track1);
-
     }
 
     protected void flushSong() {
@@ -395,10 +393,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public boolean onTouch(View view, MotionEvent motionEvent) {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
- //               for (SampleEvent ev : _samplesVector) ev.stop();
-                for (int i = 0; i < maxSampleCount; i++) {
-                    _samplesVector.get(i).stop();
-                }
+                for (SampleEvent ev : _samplesVector) ev.stop();
             }
             return false;
         }
@@ -418,13 +413,13 @@ public class MainActivity extends AppCompatActivity {
         public boolean isRunning() { return isRunning; }
 
         public void start() {
-            count = 0; // metro already on, start from main sample standard start/stop
+            count = 0; // for when metro already on, start from main sample
             isRunning = true;
             cycle();
         }
         // First sample (main) already started; start subsequent samples
         public void startAfter() { // metro switched on after sample already playing
-            count = 1; // always start from 2d sample, first is main sample standard start/stop
+            count = 1; // always start from 2d sample, first is main sample already playing
             isRunning = true;
             cycle();
         }
@@ -434,11 +429,6 @@ public class MainActivity extends AppCompatActivity {
                 isRunning = false;
                 if(task != null) task.cancel(true);
                 cycle();
-//                scheduler.schedule(this::cycle, 0l, TimeUnit.MILLISECONDS);
-//                for (SampleEvent ev : _samplesVector) ev.stop();
-//                for (int i = 0; i < maxSampleCount; i++) { // stop all but first main sample
-//                    _samplesVector.get(i).stop();
-//                }
             }
         }
 
@@ -450,7 +440,7 @@ public class MainActivity extends AppCompatActivity {
                 count = count % maxSampleCount;
                 task = scheduler.schedule(this::cycle, delay, TimeUnit.MILLISECONDS);
             } else {
-//                if(task != null) task.cancel(true);
+                if(task != null) task.cancel(true); // maybe overcautious...
 //                for (SampleEvent ev : _samplesVector) ev.stop();
                 for (int i = 0; i < maxSampleCount; i++) {
                     _samplesVector.get(i).stop();
