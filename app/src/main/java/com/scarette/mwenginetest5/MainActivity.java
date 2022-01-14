@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
     private Metronome metronome;
     private ChannelGroup track1;
 
-    private int maxSampleCount = 48;
+    private int maxSampleCount = 32;
     private int slength;
     private int smillis;
 
