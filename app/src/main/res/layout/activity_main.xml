@@ -116,6 +116,31 @@
                 android:text="@string/metro_switch" />
         </LinearLayout>
 
+        <!-- autometro switch -->
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/AutometroSwitch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dip"
+                android:layout_marginTop="16dp"
+                android:layout_marginRight="5dip"
+                android:layout_marginBottom="16dp"
+                android:checked="false" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:padding="7dip"
+                android:text="@string/autometro_switch" />
+        </LinearLayout>
+
         <!-- metronome speed -->
 
         <LinearLayout

@@ -10,6 +10,7 @@ import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -49,10 +50,11 @@ public class MainActivity extends AppCompatActivity {
     private MWEngine _engine;
     private SequencerController _sequencerController;
 
-    private Vector<SampleEvent> _samplesVector = new Vector<>();
+    private Vector<SampleEventRange> _samplesVector = new Vector<>();
 
     private ReverbSM reverb;
     private Metronome metronome;
+    private AutoMetro autometro;
     private ChannelGroup track1;
 
     private int maxSampleCount = 32;
@@ -186,6 +188,8 @@ public class MainActivity extends AppCompatActivity {
 
         ((SwitchCompat) findViewById(R.id.MetronomeSwitch)).setOnClickListener(new MetronomeSwitchHandler());
 
+        ((SwitchCompat) findViewById(R.id.AutometroSwitch)).setOnClickListener(new AutoMetroSwitchHandler());
+
         (( SeekBar ) findViewById( R.id.MetronomeSpeedSlider )).setOnSeekBarChangeListener( new MetronomeChangeHandler() );
 
         (( SeekBar ) findViewById( R.id.VolumeSlider )).setOnSeekBarChangeListener( new VolumeChangeHandler() );
@@ -218,7 +222,7 @@ public class MainActivity extends AppCompatActivity {
         _sampler = new SampledInstrument();
 
         for (int i = 0; i < maxSampleCount; i++) {
-            final SampleEvent ev = new SampleEvent(_sampler);
+            final SampleEventRange ev = new SampleEventRange(_sampler);
             _samplesVector.add(ev);
         }
         Log.d( LOG_TAG, "setupSong() _sampleVector.size: " + _samplesVector.size());
@@ -227,6 +231,7 @@ public class MainActivity extends AppCompatActivity {
         _sampler.getAudioChannel().getProcessingChain().addProcessor(_limiter); // "borrowed" from masterBus
 
         metronome = new Metronome();
+        autometro = new AutoMetro();
 
         reverb = new ReverbSM();
 
@@ -246,7 +251,6 @@ public class MainActivity extends AppCompatActivity {
         // native layer destructor (and removes it from the sequencer)
 
         for (final BaseAudioEvent event : _samplesVector) {
-            event.getInstrument().delete();
             event.delete();
         }
 
@@ -304,24 +308,25 @@ public class MainActivity extends AppCompatActivity {
             if (pos == 0) {
                 if (SampleManager.hasSample("one"))
                     SampleManager.removeSample("one", true);
-                Log.d(LOG_TAG, "//////// SoundChangeHandler sample still exist? : "
-                        + SampleManager.hasSample("one"));
+//                Log.d(LOG_TAG, "//////// SoundChangeHandler sample still exist? : "
+//                        + SampleManager.hasSample("one"));
                 loadWAVAsset( "bach2_48.wav", "one");
-                Log.d(LOG_TAG, "//////// SoundChangeHandler new bach sample loaded? : "
-                        + SampleManager.hasSample("one"));
+//                Log.d(LOG_TAG, "//////// SoundChangeHandler new bach sample loaded? : "
+//                        + SampleManager.hasSample("one"));
             } else if (pos == 1) {
                 if (SampleManager.hasSample("one"))
                     SampleManager.removeSample("one", true);
-                Log.d(LOG_TAG, "//////// SoundChangeHandler sample still exist? : "
-                        + SampleManager.hasSample("one"));
+//                Log.d(LOG_TAG, "//////// SoundChangeHandler sample still exist? : "
+//                        + SampleManager.hasSample("one"));
                 loadWAVAsset("bonjour-hello48_16bit.wav", "one");
-                Log.d(LOG_TAG, "//////// SoundChangeHandler new bonjour sample loaded? : "
-                        + SampleManager.hasSample("one"));
+//                Log.d(LOG_TAG, "//////// SoundChangeHandler new bonjour sample loaded? : "
+//                        + SampleManager.hasSample("one"));
             }
             slength = SampleManager.getSampleLength("one");
             smillis = BufferUtility.bufferToMilliseconds(slength, SAMPLE_RATE);
             metronome.calcOverlap();
-            for (SampleEvent ev : _samplesVector)
+            reverb.mute();
+            for (SampleEventRange ev : _samplesVector)
                 ev.setSample(SampleManager.getSample(name));
 
         }
@@ -347,6 +352,17 @@ public class MainActivity extends AppCompatActivity {
                 metronome.start();
             } else {
                 metronome.stop();
+            }
+        }
+    }
+
+    private class AutoMetroSwitchHandler implements View.OnClickListener {
+        @Override
+        public void onClick(View view) {
+            if (((SwitchCompat)view).isChecked()) {
+                autometro.start();
+            } else {
+                autometro.stop();
             }
         }
     }
@@ -393,7 +409,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public boolean onTouch(View view, MotionEvent motionEvent) {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-                for (SampleEvent ev : _samplesVector) ev.stop();
+                for (SampleEventRange ev : _samplesVector) ev.stop();
             }
             return false;
         }
@@ -457,6 +473,41 @@ public class MainActivity extends AppCompatActivity {
             Log.d(LOG_TAG, "sample millis: " + smillis + " cycle time: " + delay + " overlap: " + overlap);
         }
 
+    }
+
+    private class AutoMetro {
+        private ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+        ScheduledFuture<?> task;
+        private boolean isRunning = false;
+
+        public void start() {
+            isRunning = true;
+            cycle();
+        }
+
+        public void stop() {
+            if (isRunning) {
+                isRunning = false;
+                if(task != null) task.cancel(true);
+                cycle();
+            }
+        }
+
+        public void cycle() {
+            if (isRunning) {
+                metronome.stop();
+                SystemClock.sleep(10);
+                float speed = 900.f + (100.f * (float)Math.random());
+                float time = 700.f + (1000.f * (float)Math.random());
+                long millis = (long) (60000f / speed);
+                metronome.setTime(millis);
+                metronome.start();
+                task = scheduler.schedule(this::cycle, (long)time, TimeUnit.MILLISECONDS);
+            } else {
+                if(task != null) task.cancel(true); // maybe overcautious...
+                metronome.stop();
+            }
+        }
     }
 
     /* state change message listener */

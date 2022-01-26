@@ -13,7 +13,9 @@
     <string name="slider_volume">Output volume</string>
     <string name="reverb_switch">Reverb switch</string>
     <string name="metro_switch">Metro switch</string>
+    <string name="autometro_switch">AutoMetro Switch</string>
     <string name="metronome_speed">Metronome speed</string>
+
 
     <string-array name="drivers">
         <item>Bach</item>
